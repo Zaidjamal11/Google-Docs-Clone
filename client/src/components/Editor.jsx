@@ -4,6 +4,8 @@ import { Box, styled } from "@mui/material";
 import Quill from "quill";
 import "quill/dist/quill.snow.css";
 
+import { io } from "socket.io-client";
+
 const Component = styled(Box)`
   background: #f5f5f5;
 `;
@@ -35,6 +37,15 @@ const Editor = () => {
       modules: { toolbar: toolbarOptions },
     });
   }, []);
+
+  useEffect(() => {
+    const socketServer = io("http://localhost:9000");
+
+    return () => {
+      socketServer.disconnect();
+    };
+  });
+
   return (
     <Component>
       <Box id="container" className="container"></Box>
