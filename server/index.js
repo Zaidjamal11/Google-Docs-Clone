@@ -11,5 +11,5 @@ const io = new Server(PORT, {
 
 
 io.on('connection', socket => {
-    console.log('connected');
+    
 });
