@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Box, styled } from "@mui/material";
 
 import Quill from "quill";
 import "quill/dist/quill.snow.css";
 
 import { io } from "socket.io-client";
+import { useParams } from "react-router-dom";
 
 const Component = styled(Box)`
   background: #f5f5f5;
@@ -31,20 +32,69 @@ const toolbarOptions = [
 ];
 
 const Editor = () => {
+  const [socket, setSocket] = useState();
+  const [quill, setQuill] = useState();
+  const { id } = useParams();
+
   useEffect(() => {
     const quillServer = new Quill("#container", {
       theme: "snow",
       modules: { toolbar: toolbarOptions },
     });
+    quillServer.disable();
+    quillServer.setText("Loading the document...");
+    setQuill(quillServer);
   }, []);
 
   useEffect(() => {
     const socketServer = io("http://localhost:9000");
+    setSocket(socketServer);
 
     return () => {
       socketServer.disconnect();
     };
-  });
+  }, []);
+
+  useEffect(() => {
+    if (socket === null || quill === null) return;
+
+    const handleChange = (delta, oldData, source) => {
+      if (source !== "user") return;
+
+      socket && socket.emit("send-changes", delta);
+    };
+
+    quill && quill.on("text-change", handleChange);
+
+    return () => {
+      quill && quill.off("text-change", handleChange);
+    };
+  }, [quill, socket]);
+
+  useEffect(() => {
+    if (socket === null || quill === null) return;
+
+    const handleChange = (delta) => {
+      quill.updateContents(delta);
+    };
+
+    socket && socket.on("receive-changes", handleChange);
+
+    return () => {
+      quill && quill.off("receive-changes", handleChange);
+    };
+  }, [quill, socket]);
+
+  useEffect(() => {
+    if (quill === null || socket === null) return;
+
+    socket && socket.once('load-document', document => {
+        quill.setContents(document);
+        quill.enable();
+    })
+
+    socket && socket.emit('get-document', id);
+},  [quill, socket, id]);
 
   return (
     <Component>
