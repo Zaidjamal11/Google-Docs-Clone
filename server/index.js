@@ -9,18 +9,16 @@ const io = new Server(PORT, {
   },
 });
 
-io.on("connection", (socket) => {
-  socket.on("get-document", documnetId => {
+io.on('connection', socket => {
+  socket.on('get-document', async documentId => {
+      const data="";
+      socket.join(documentId);
+      socket.emit('load-document', data);
 
-    const data ="";
-    socket.join(documnetId);
-        socket.emit('load-document', data);
+      socket.on('send-changes', delta => {
+          socket.broadcast.to(documentId).emit('receive-changes', delta);
+      })
 
 
-    socket.on('send-changes', delta => {
-        socket.broadcast.to(documnetId).emit('receive-changes', delta);
-    });
-  });
-
-  console.log("connected");
+  })
 });
